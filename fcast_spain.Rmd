@@ -1,0 +1,76 @@
+---
+title: "Macro Forecasts Spain"
+author: "Ramon Prat"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  pdf_document:
+    latex_engine: xelatex
+---
+# My Monthly Forecast
+```{r setup, include=FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(timeSeries)
+library(forecast)
+library(jsonlite)
+library(quantmod)
+library(forecast)
+library(xtable)
+```
+```{r}
+
+```
+
+```{r download, include=FALSE}
+#json config to download data from INE
+#api_key<-"&api_key=9912ee381321a596b999f26cfa5da2a5"
+#url<-"https://api.stlouisfed.org/fred/series/observations?"
+#file_type<-"&file_type=json"
+url<-"http://www.ine.es/wstempus/js/ES/DATOS_SERIE/CNTR3180?date=:"
+```
+
+```{r employment, cache=FALSE,include=FALSE}
+#Descargar PIB Variación% PIB trimestral
+#Variación trimestral > 2016T3 > Datos corregidos de efectos estacionales y de calendario > Producto interior bruto a precios de mercado
+s1<-fromJSON(paste0(url))
+s1[,"Data"]
+s1_df<-as.data.frame(s1[,"Data"])
+s1_df<-s1_df[,3:5]
+s1_df[s1_df$FK_Periodo == 19,1]<-c("1")
+s1_df[s1_df$FK_Periodo == 20,1]<-c("2")
+s1_df[s1_df$FK_Periodo == 21,1]<-c("3")
+s1_df[s1_df$FK_Periodo == 22,1]<-c("4")
+#s1_date <-paste(last(s1_df[,2]),last(s1_df[,1]))
+#crear TS
+data<-s1_df[,"Valor"]
+s1<-ts(data, frequency = 4, start = c(1995, 2))
+```
+
+
+```{r output, include=FALSE, cache=FALSE}
+# FORECAST
+
+fit1 <- auto.arima(s1)
+ts1_cast3<-forecast(fit1, 3)
+acc1<-accuracy(fit1)
+me1<-acc1[1,1]
+me<-round(c(me1),4)
+parameter<-c("RealGDP")
+avdate<-toString(c(end(s1)))
+value3<-round(c(ts1_cast3$mean),4)
+value3<-as.data.frame(matrix(c(value3),nrow=1,ncol=3,byrow=TRUE))
+value3<-((value3/100)+1)^4 #annualize
+value3<-(value3-1)*100
+last<-round(c(last(s1)),4)
+last<-((last/100)+1)^4 #annualize
+last<-(last-1)*100
+
+freq<-c("quarterly")
+forecast<-data.frame(parameter,freq, last,avdate, value3, me)#%, unit)
+colnames(forecast) <- c("Parameter", "freq","last","AvDate", "Fcast+1","Fcast+2","Fcast+3","ME")#, "Desc")
+```
+
+```{r report, results="asis", echo=FALSE}
+xt<-xtable(forecast, comment=FALSE)
+print(xt, type="latex", comment=FALSE)
+```
+Quarterly growth annualized.
