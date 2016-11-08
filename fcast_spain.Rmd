@@ -16,15 +16,9 @@ library(quantmod)
 library(forecast)
 library(xtable)
 ```
-```{r}
-
-```
 
 ```{r download, include=FALSE}
 #json config to download data from INE
-#api_key<-"&api_key=9912ee381321a596b999f26cfa5da2a5"
-#url<-"https://api.stlouisfed.org/fred/series/observations?"
-#file_type<-"&file_type=json"
 url<-"http://www.ine.es/wstempus/js/ES/DATOS_SERIE/CNTR3180?date=:"
 ```
 
@@ -32,8 +26,9 @@ url<-"http://www.ine.es/wstempus/js/ES/DATOS_SERIE/CNTR3180?date=:"
 #Descargar PIB Variación% PIB trimestral
 #Variación trimestral > 2016T3 > Datos corregidos de efectos estacionales y de calendario > Producto interior bruto a precios de mercado
 s1<-fromJSON(paste0(url))
-s1[,"Data"]
-s1_df<-as.data.frame(s1[,"Data"])
+s1
+s1$Data
+s1_df<-as.data.frame(s1$Data)
 s1_df<-s1_df[,3:5]
 s1_df[s1_df$FK_Periodo == 19,1]<-c("1")
 s1_df[s1_df$FK_Periodo == 20,1]<-c("2")
@@ -73,4 +68,10 @@ colnames(forecast) <- c("Parameter", "freq","last","AvDate", "Fcast+1","Fcast+2"
 xt<-xtable(forecast, comment=FALSE)
 print(xt, type="latex", comment=FALSE)
 ```
+
+```{r, echo=FALSE}
+plot(forecast(fit1,12),main="PIB Real Base 2010 Variación Trimestral",36)
+```
+
+
 Quarterly growth annualized.
